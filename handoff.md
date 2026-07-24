@@ -1,19 +1,23 @@
 # Handoff — You.com Agentic AI Hackathon (SF Edition)
 
-## 1. Chosen Track
+## 1. Track — Deferred by Design
 
-**Real-Time Intelligence.**
+No track is locked in yet. Rather than build a single-track product and hope it matches
+whatever gets picked at the event, this repo is a **track-agnostic harness**: a working
+Next.js + Vercel AI SDK app with a live `ToolLoopAgent`, real You.com Search + Research tool
+calls, streaming UI, an access gate, and a linked Vercel deployment — all already tested
+end-to-end. The only genuinely track-specific part is the agent's system prompt and tool set,
+isolated in one file ([`agent/pulse-agent.ts`](agent/pulse-agent.ts)) and cheap to swap on the
+day. See §6 for how to retarget it per track.
 
-Rationale: this track rewards agents that reason over live web/news/market data with
-citations — which is exactly what the You.com Web Search + Finance Research APIs are built
-for, and it's scoped tightly enough to ship a polished demo in a single hackathon day (vs.
-"Deep Research," which implies longer-running multi-step jobs, or "Multi-Agent Systems,"
-which adds coordination overhead we don't need to prove the core value prop).
+The current default config — **"Pulse"**: user gives a topic/company/ticker, agent streams
+back a synthesized, cited briefing — targets **Real-Time Intelligence** purely because it's
+the smallest surface that exercises every part of the harness (both You.com tools, streaming,
+citations). Not a commitment to that track.
 
-**Product concept — "Pulse":** the user gives a topic, company, or ticker; the agent streams
-back a synthesized, citation-backed briefing assembled live from You.com Search + Research
-results, refreshable on demand. Single focused agent, not a multi-agent pipeline —
-depth over breadth, given the time budget.
+*Note: only three track names are on record from earlier in this session — Real-Time
+Intelligence, Deep Research, Multi-Agent Systems. If the real list is longer, say so and §6
+gets extended to cover the rest.*
 
 **Correction (post-verification):** the hackathon brief mentions a separate "Finance Research
 API." Direct inspection of the official `@youdotcom-oss/sdk` (v0.13.1) — reading its actual
@@ -81,22 +85,53 @@ Research" use case without a separate primitive.
 - [ ] 1–3 minute demo video
 - [ ] ~200-word project description (problem, track, stack, API usage)
 
-## 5. Partner Ecosystem & Additional Tooling — Evaluated, Not Adopted
+## 5. Partner Ecosystem & Additional Tooling — Tool-by-Tool Review
 
-The hackathon brief lists optional partner tools (AWS, Replit, Render, Opsera, CrewAI,
-LlamaIndex, Agno, LangGraph, AutoGen, Parasail, MindStudio, One/Pica) and associated free
-credits. Decision: **none adopted**, deliberately.
+Re-evaluated now that the harness is meant to be track-agnostic, not just for Real-Time
+Intelligence. **Important constraint:** most of these require creating a new third-party
+account (AWS, Render, Replit, LlamaIndex, Agno, Pica, Parasail, CrewAI's cloud, Opsera).
+Account creation is on Claude's prohibited-actions list — I cannot sign up for these on your
+behalf. Anything below marked "connect" means you'd need to create the account and hand me
+the resulting key; I can wire it into the code immediately once you do.
 
-- The brief itself names the Vercel AI SDK as an accepted framework — already in use.
-- No open problem in this app maps to what the other tools solve: deployment is already
-  Vercel (linked project `pulse-app`), the data layer is two verified direct-`fetch` calls
-  (no need for LlamaIndex), and there's a single agent with no multi-agent coordination need
-  (no need for CrewAI/Agno/LangGraph/AutoGen).
-- Judging is on the Real-Time Intelligence product, not partner-tool breadth. Adding an
-  unfamiliar integration this close to the deadline trades tested, working code for
-  integration risk with no clear judging upside.
-- **Exception considered:** Opsera's $500 prize for Agents/Forge usage. Not pursued — would
-  need net-new integration work with uncertain payoff this late. Revisit only if there's spare
-  time after the video + description are done.
-- Credits noted but unused: LlamaIndex $100, Render $50, AWS $25, Agno 1 month, Pica 1 month.
-  You.com's $100 is the only credit pool this app actually draws on.
+| Tool | Verdict | Why |
+|---|---|---|
+| AWS | Skip | Vercel already hosts the app natively; nothing here needs AWS-specific compute/storage. |
+| Replit | Skip | Redundant with the existing local-dev + Vercel deploy pipeline, which already works end-to-end. |
+| Render | Skip | Same rationale as AWS — an alternative host we don't need a second one of. |
+| Opsera | Skip (bonus only) | $500 side-prize for Agents/Forge usage, but it's net-new integration work unrelated to the core product. Only worth it as a post-submission stretch goal if time remains. |
+| CrewAI | Skip | Multi-agent orchestration framework — redundant with the AI SDK's `ToolLoopAgent`, which the brief already accepts and which already works. If a multi-agent track is chosen, §6 shows how to get there without a new framework. |
+| LlamaIndex | Skip | Solves "connect custom data sources to an LLM" — we don't have a custom/private data source; You.com's APIs already are the data source. Would matter only if a track needed retrieval over a private document set. |
+| Agno | Skip | Another agent-orchestration layer — same redundancy as CrewAI. |
+| LangGraph / AutoGen | Skip | Same reasoning as CrewAI/Agno. |
+| Parasail | Skip | The Vercel AI Gateway (already wired in) already exposes 100+ models across providers under one key — Parasail only matters if it hosts something the Gateway doesn't. |
+| MindStudio | Skip | A low-code app builder — would replace the hand-coded approach we're already using, not extend it. |
+| One (Pica) | Skip for now | An integration platform for taking actions in third-party apps (Slack, email, etc.). None of our current tools need that. Worth reconsidering only if a chosen track requires the agent to act in another app, not just read/summarize data. |
+
+Net: the harness intentionally stays on the stack already proven to work (Next.js + Vercel AI
+SDK + You.com + Vercel deploy). None of the partner tools close a real gap; several are
+mutually-exclusive alternatives to decisions already made. Credits noted but unused:
+LlamaIndex $100, Render $50, AWS $25, Agno 1 month, Pica 1 month. You.com's $100 is the only
+credit pool this app draws on, plus the Vercel AI Gateway's $5 (currently conserved — see
+`agent/pulse-agent.ts`, pinned to the cheap `amazon/nova-micro` model until the real demo).
+
+## 6. Track Retargeting Guide
+
+Everything below the agent's system prompt and tool set is track-agnostic. To retarget:
+
+- **Real-Time Intelligence (current default):** topic/ticker → cited briefing. No changes
+  needed.
+- **Deep Research:** bump `deepResearch`'s `effort` default in
+  [`agent/pulse-agent.ts`](agent/pulse-agent.ts) from `"standard"` to `"deep"`/`"exhaustive"`,
+  and/or let the agent chain multiple `deepResearch` calls (sub-questions) before synthesizing
+  a final answer. The tool and API already support this — it's a prompt/default change, not
+  new code.
+- **Multi-Agent Systems:** split the single `ToolLoopAgent` into two or more (e.g., a
+  "researcher" agent that only calls the You.com tools, and a "writer/critic" agent that takes
+  the researcher's output and produces/critiques the final briefing), orchestrated by a parent
+  loop. This is a plain AI SDK pattern (multiple `ToolLoopAgent` instances called in sequence
+  or by each other as tools) — no CrewAI/LangGraph/Agno needed, per §5.
+- **Any other track:** if it needs a capability not covered above (e.g., taking actions in
+  another app, retrieving from a private document store), that's the point at which one of the
+  skipped tools in §5 (Pica, LlamaIndex) would actually earn its place — revisit that table
+  rather than defaulting to "skip" if the chosen track genuinely needs it.
