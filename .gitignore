@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# reference material dropped in for briefing (not part of the app)
+*.pdf
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

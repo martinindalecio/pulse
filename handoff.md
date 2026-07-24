@@ -15,9 +15,20 @@ back a synthesized, cited briefing — targets **Real-Time Intelligence** purely
 the smallest surface that exercises every part of the harness (both You.com tools, streaming,
 citations). Not a commitment to that track.
 
-*Note: only three track names are on record from earlier in this session — Real-Time
-Intelligence, Deep Research, Multi-Agent Systems. If the real list is longer, say so and §6
-gets extended to cover the rest.*
+**Confirmed** against the official night-before brief ("The Universal Scaffold," AWS Builder
+Loft SF, July 24 2026): the three tracks are exactly **Real-Time Intelligence, Deep Research,
+Multi-Agent Systems** — no others. The brief's own workflow defers the specific idea/track
+choice to event morning (its "Prompt 3 — The Idea Pivot," to be run with Gemini at ~11:10 AM
+once the track is picked), which is exactly what this harness is built to support.
+
+**Other hard constraints from the same brief** (folds into §4):
+- Any one of Search, Contents, Research, or Finance counts as "integrates a You.com API" —
+  this app already uses two (Search + Research).
+- In-person live demo is primary; the 1–3 min video is the secondary/backup, not optional.
+- Citation/source quality is called out as ~25% of the technical score — worth extra polish
+  time on demo day rather than new features.
+- Day-of timeline: doors 9:30 AM, build window 11:10 AM, feature freeze 3:00 PM (switch to
+  polishing citations), final push 5:00 PM, submit 6:25 PM.
 
 **Correction (post-verification):** the hackathon brief mentions a separate "Finance Research
 API." Direct inspection of the official `@youdotcom-oss/sdk` (v0.13.1) — reading its actual
@@ -78,11 +89,13 @@ Research" use case without a separate primitive.
 
 ## 4. Submission Checklist
 
-- [x] Integrates ≥1 You.com API endpoint (Search + Research, both live-verified)
+- [x] Integrates ≥1 You.com API endpoint (Search + Research, both live-verified; Contents and
+      Finance are the other two options in the brief but aren't required beyond one)
 - [x] Hosted on a public GitHub repository — https://github.com/martinindalecio/pulse
 - [x] `README.md` with clear setup instructions
 - [ ] Deployed (Vercel project `pulse-app` already linked, zero env vars set yet — see §5)
-- [ ] 1–3 minute demo video
+- [ ] Live in-person demo ready (this is the primary format per the brief)
+- [ ] 1–3 minute demo video (secondary/backup, still required)
 - [ ] ~200-word project description (problem, track, stack, API usage)
 
 ## 5. Partner Ecosystem & Additional Tooling — Tool-by-Tool Review
