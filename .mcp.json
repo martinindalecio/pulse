@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "you-search": {
+      "type": "http",
+      "url": "https://api.you.com/mcp?profile=free"
+    },
+    "you-docs": {
+      "type": "http",
+      "url": "https://you.com/docs/_mcp/server"
+    }
+  }
+}
