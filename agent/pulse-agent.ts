@@ -3,7 +3,9 @@ import { z } from "zod";
 import { youResearch, youSearch } from "@/lib/you";
 
 export const pulseAgent = new ToolLoopAgent({
-  model: "anthropic/claude-sonnet-5",
+  // Cheapest tool-capable model on the AI Gateway — conserves the $5 free credit
+  // during dev/harness testing. Swap back to a stronger model for the hackathon demo.
+  model: "amazon/nova-micro",
   instructions: `You are Pulse, a real-time intelligence briefing agent.
 
 The user gives you a topic, company, or ticker. Produce a synthesized, well-organized
