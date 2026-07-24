@@ -74,8 +74,29 @@ Research" use case without a separate primitive.
 
 ## 4. Submission Checklist
 
-- [ ] Integrates ≥1 You.com API endpoint (Search + Research, both live-verified)
-- [ ] Hosted on a public GitHub repository
-- [ ] `README.md` with clear setup instructions
+- [x] Integrates ≥1 You.com API endpoint (Search + Research, both live-verified)
+- [x] Hosted on a public GitHub repository — https://github.com/martinindalecio/pulse
+- [x] `README.md` with clear setup instructions
+- [ ] Deployed (Vercel project `pulse-app` already linked, zero env vars set yet — see §5)
 - [ ] 1–3 minute demo video
 - [ ] ~200-word project description (problem, track, stack, API usage)
+
+## 5. Partner Ecosystem & Additional Tooling — Evaluated, Not Adopted
+
+The hackathon brief lists optional partner tools (AWS, Replit, Render, Opsera, CrewAI,
+LlamaIndex, Agno, LangGraph, AutoGen, Parasail, MindStudio, One/Pica) and associated free
+credits. Decision: **none adopted**, deliberately.
+
+- The brief itself names the Vercel AI SDK as an accepted framework — already in use.
+- No open problem in this app maps to what the other tools solve: deployment is already
+  Vercel (linked project `pulse-app`), the data layer is two verified direct-`fetch` calls
+  (no need for LlamaIndex), and there's a single agent with no multi-agent coordination need
+  (no need for CrewAI/Agno/LangGraph/AutoGen).
+- Judging is on the Real-Time Intelligence product, not partner-tool breadth. Adding an
+  unfamiliar integration this close to the deadline trades tested, working code for
+  integration risk with no clear judging upside.
+- **Exception considered:** Opsera's $500 prize for Agents/Forge usage. Not pursued — would
+  need net-new integration work with uncertain payoff this late. Revisit only if there's spare
+  time after the video + description are done.
+- Credits noted but unused: LlamaIndex $100, Render $50, AWS $25, Agno 1 month, Pica 1 month.
+  You.com's $100 is the only credit pool this app actually draws on.
