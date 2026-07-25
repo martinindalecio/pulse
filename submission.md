@@ -1,6 +1,6 @@
 # Pulse / Lead Radar — submission materials
 
-## Project description (~245 words)
+## Project description (239 words)
 
 If the submission form caps this at 200, drop the "Pulse chat" paragraph — Lead Radar and the
 pipeline are what the judging criteria reward, and chat is the one surface that explains itself.

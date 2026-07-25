@@ -107,7 +107,7 @@ exists."
 - [x] Both You.com endpoints live-tested end-to-end with the real key (search + research)
 - [x] Search MCP server configured in workspace (`https://api.you.com/mcp?profile=free`)
 - [x] Docs MCP server configured in workspace (`https://you.com/docs/_mcp/server`)
-- [ ] Agent/tool code, API route, and UI — in progress (next step)
+- [x] Agent/tool code, API routes, and UI — shipped; see the README for what was actually built
 
 ## 4. Submission Checklist
 
@@ -115,10 +115,17 @@ exists."
       Finance are the other two options in the brief but aren't required beyond one)
 - [x] Hosted on a public GitHub repository — https://github.com/martinindalecio/pulse
 - [x] `README.md` with clear setup instructions
-- [ ] Deployed (Vercel project `pulse-app` already linked, zero env vars set yet — see §5)
-- [ ] Live in-person demo ready (this is the primary format per the brief)
+- [x] Deployed — https://pulse-app-navy-ten.vercel.app, with `YDC_API_KEY` and
+      `PULSE_ACCESS_CODE` set on the host
+- [x] Live in-person demo ready (this is the primary format per the brief) — script and
+      pre-flight steps in [demo-script.md](demo-script.md)
 - [ ] 1–3 minute demo video (secondary/backup, still required)
-- [ ] ~200-word project description (problem, track, stack, API usage)
+- [x] ~200-word project description (problem, track, stack, API usage) — see
+      [submission.md](submission.md)
+
+**This file is the pre-build planning record, kept for provenance.** Everything from §5 down
+was written before the track was announced and before the app existed; where it disagrees with
+the README, the README is what shipped.
 
 ## 5. Partner Ecosystem & Additional Tooling — Tool-by-Tool Review
 
