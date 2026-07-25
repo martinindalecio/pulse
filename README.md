@@ -265,5 +265,5 @@ npm run gate-check
       layer
 - [x] Deployed to production, with `YDC_API_KEY` and `PULSE_ACCESS_CODE` set on the host
 - [x] Live run verified on the deployed URL: `mode: "agent"`, 13 leads, 24s
-- [ ] Demo video (1–3 min) — script and pre-flight steps in [demo-script.md](demo-script.md)
+- [x] Demo video (1–3 min) recorded — script and pre-flight steps in [demo-script.md](demo-script.md)
 - [x] Project description drafted (`submission.md`)

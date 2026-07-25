@@ -161,7 +161,7 @@ with the stored result already in it.
 - [x] Public repo, deployed, `YDC_API_KEY` and `PULSE_ACCESS_CODE` set on the host
 - [x] Live conversion-agent run verified against production
 - [x] Project description drafted — see [submission.md](submission.md)
-- [ ] Video recorded (1–3 min) and uploaded
+- [x] Video recorded (1–3 min) and uploaded
 - [ ] **Judges need the passcode to open the live app** — include it in the submission form's
       notes field, or the deployment reads as broken. Do not put it in the README or the video.
-- [ ] Submission form filed before the deadline
+- [x] Submission form filed before the deadline
