@@ -101,6 +101,7 @@ export const STRINGS = {
     es: "Lista fija para este tipo de asunto. Escrita una vez, idéntica en cada ejecución — ningún modelo decide estos pasos.",
   },
   "exec.research": { en: "Case research", es: "Investigación del caso" },
+  "exec.liveBadge": { en: "Live", es: "En vivo" },
   "exec.researchNote": {
     en: "Live findings from You.com Research about this specific signal.",
     es: "Hallazgos en vivo de You.com Research sobre esta señal específica.",

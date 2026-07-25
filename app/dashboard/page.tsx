@@ -179,8 +179,8 @@ function Counter({
       onClick={onClick}
       className={`rounded-2xl border px-3 py-2 text-left transition-colors ${
         active
-          ? "border-zinc-950 bg-white dark:border-zinc-50 dark:bg-zinc-900"
-          : "border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
+          ? "border-zinc-950 bg-white shadow-sm ring-1 ring-zinc-950 dark:border-zinc-50 dark:bg-zinc-900 dark:ring-zinc-50"
+          : "border-zinc-200 bg-white hover:border-zinc-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
       }`}
     >
       <div className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">{count}</div>
@@ -232,7 +232,11 @@ function SignalRow({
   const category = lead.category ?? "edict";
 
   return (
-    <li className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <li
+      className={`rounded-2xl border border-zinc-200 bg-white p-4 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900 ${
+        lead.score >= 80 ? "border-l-4 border-l-zinc-950 dark:border-l-zinc-50" : ""
+      }`}
+    >
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
           {CATEGORY_LABELS[category][lang]}
@@ -241,7 +245,18 @@ function SignalRow({
           {t(STATUS_KEY[entry.status])}
         </span>
         <span className="font-medium text-zinc-950 dark:text-zinc-50">{lead.title}</span>
-        <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">{lead.score}/100</span>
+        <span
+          className={`ml-auto font-mono tabular-nums ${
+            lead.score >= 80
+              ? "text-2xl font-bold text-zinc-950 dark:text-zinc-50"
+              : lead.score >= 50
+                ? "text-base font-semibold text-zinc-700 dark:text-zinc-300"
+                : "text-xs font-medium text-zinc-400 dark:text-zinc-500"
+          }`}
+        >
+          {lead.score}
+          <span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">/100</span>
+        </span>
       </div>
 
       <p className="text-xs text-zinc-500 dark:text-zinc-400">{CATEGORY_BLURBS[category][lang]}</p>
@@ -392,10 +407,10 @@ function ExecutionPanel({
             <p className="mt-1 mb-3 text-xs text-zinc-500 dark:text-zinc-400">
               {t("exec.playbookNote")}
             </p>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-1 rounded-2xl border border-dashed border-zinc-300 bg-zinc-100/60 p-3 dark:border-zinc-700 dark:bg-zinc-900/40">
               {playbook.map((step) => (
                 <li key={step.id}>
-                  <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+                  <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-transparent bg-white/60 p-2.5 text-sm hover:border-zinc-200 dark:bg-zinc-950/40 dark:hover:border-zinc-800">
                     <input
                       type="checkbox"
                       checked={checked.includes(step.id)}
@@ -428,12 +443,15 @@ function ExecutionPanel({
           <section className="mb-8">
             <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
               {t("exec.research")}
+              <span className="ml-2 rounded-full bg-zinc-950 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-50 uppercase dark:bg-zinc-50 dark:text-zinc-950">
+                {t("exec.liveBadge")}
+              </span>
             </h3>
             <p className="mt-1 mb-3 text-xs text-zinc-500 dark:text-zinc-400">
               {t("exec.researchNote")}
             </p>
 
-            <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex flex-col gap-4 rounded-2xl border-2 border-zinc-950 bg-white p-4 text-sm shadow-sm dark:border-zinc-50 dark:bg-zinc-900">
               <Field label={t("exec.summary")}>
                 <p className="text-zinc-800 dark:text-zinc-200">{result.research.summary}</p>
               </Field>
@@ -442,16 +460,31 @@ function ExecutionPanel({
               <ListField label={t("exec.risks")} items={result.research.risks} />
               {result.research.sources.length > 0 && (
                 <Field label={t("exec.sources")}>
-                  <ul className="flex flex-col gap-1">
+                  <ul className="flex flex-col gap-1.5">
                     {result.research.sources.map((s, i) => (
                       <li key={i}>
                         <a
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-zinc-500 underline dark:text-zinc-400"
+                          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400 dark:hover:text-zinc-100"
                         >
-                          {s.title}
+                          <span className="truncate">{s.title}</span>
+                          <span className="ml-auto shrink-0 text-[10px] text-zinc-400 dark:text-zinc-500">
+                            {hostOf(s.url) === s.title.trim() ? "" : hostOf(s.url)}
+                          </span>
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="shrink-0"
+                            aria-hidden="true"
+                          >
+                            <path d="M7 17L17 7M17 7H8M17 7v9" />
+                          </svg>
                         </a>
                       </li>
                     ))}
@@ -485,6 +518,14 @@ function ExecutionPanel({
       </aside>
     </div>
   );
+}
+
+function hostOf(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
