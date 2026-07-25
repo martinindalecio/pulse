@@ -119,7 +119,7 @@ exists."
       `PULSE_ACCESS_CODE` set on the host
 - [x] Live in-person demo ready (this is the primary format per the brief) — script and
       pre-flight steps in [demo-script.md](demo-script.md)
-- [ ] 1–3 minute demo video (secondary/backup, still required)
+- [x] 1–3 minute demo video (secondary/backup, still required) — recorded
 - [x] ~200-word project description (problem, track, stack, API usage) — see
       [submission.md](submission.md)
 
