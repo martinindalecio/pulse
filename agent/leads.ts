@@ -12,6 +12,12 @@ import {
   SOURCE_DOMAINS,
   type GeoMatch,
 } from "@/lib/jurisdiction";
+import {
+  CATEGORY_EMOJI,
+  CATEGORY_LABELS,
+  classifyLead,
+  type LeadCategory,
+} from "@/lib/categories";
 
 // Vercel AI Gateway's free tier is exhausted (amazon/nova-micro returns GatewayRateLimitError on
 // every request). Every source below runs on You.com only (Search, Research, Contents) or on
@@ -32,7 +38,9 @@ export type RawLead = {
 
 export type Lead = RawLead & {
   score: number; // 0-100 notary relevance
+  category: LeadCategory; // assigned deterministically in triage, drives the conversion playbook
   reason: string; // one short Spanish line: why this matters to a notary
+  reasonEn: string; // the same rules, worded in English — the UI picks by active language
 };
 
 function hostnameOf(url: string): string {
@@ -363,17 +371,31 @@ function isOfficialDomain(url: string): boolean {
   return SOURCE_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
 }
 
-function scoreLead(candidate: RawLead, match: GeoMatch): { score: number; reason: string } {
-  const reasons: string[] = [];
+// Every scoring rule carries both wordings so the UI can show the notary's own language or the
+// judges' without a translation call at render time. The rules themselves are unchanged — this is
+// presentation, not logic.
+type BilingualReason = { es: string; en: string };
+
+function scoreLead(
+  candidate: RawLead,
+  match: GeoMatch,
+): { score: number; reason: string; reasonEn: string } {
+  const reasons: BilingualReason[] = [];
   let score: number;
 
   // Signal type: a legal notice is a more direct notary lead than a property listing.
   if (candidate.type === "legal-notice") {
     score = 55;
-    reasons.push("aviso legal: genera trabajo notarial directo (sucesión, ausencia o remate)");
+    reasons.push({
+      es: "aviso legal: genera trabajo notarial directo (sucesión, ausencia o remate)",
+      en: "legal notice: generates direct notarial work (succession, absence or auction)",
+    });
   } else {
     score = 35;
-    reasons.push("venta de propiedad: puede requerir escrituración");
+    reasons.push({
+      es: "venta de propiedad: puede requerir escrituración",
+      en: "property sale: may require a notarised deed",
+    });
   }
 
   // Strength of the jurisdiction match: a rare toponym or an official alias is stronger evidence
@@ -382,19 +404,31 @@ function scoreLead(candidate: RawLead, match: GeoMatch): { score: number; reason
   const alias = match.matched.find((m) => (JURISDICTION_ALIASES as string[]).includes(m));
   if (rareToponym) {
     score += 20;
-    reasons.push(`coincide con el topónimo local "${rareToponym}" (evidencia fuerte de jurisdicción)`);
+    reasons.push({
+      es: `coincide con el topónimo local "${rareToponym}" (evidencia fuerte de jurisdicción)`,
+      en: `matches the local place name "${rareToponym}" (strong jurisdiction evidence)`,
+    });
   } else if (alias) {
     score += 15;
-    reasons.push(`menciona "${alias}", nombre oficial de la demarcación`);
+    reasons.push({
+      es: `menciona "${alias}", nombre oficial de la demarcación`,
+      en: `mentions "${alias}", the official name of the district`,
+    });
   } else if (match.municipio) {
     score += 8;
-    reasons.push(`menciona el municipio de ${match.municipio}`);
+    reasons.push({
+      es: `menciona el municipio de ${match.municipio}`,
+      en: `mentions the municipality of ${match.municipio}`,
+    });
   }
 
   // Source authority: an official domain outranks a listing aggregator.
   if (isOfficialDomain(candidate.sourceUrl)) {
     score += 15;
-    reasons.push("fuente oficial (juzgado, gaceta o colegio de notarios)");
+    reasons.push({
+      es: "fuente oficial (juzgado, gaceta o colegio de notarios)",
+      en: "official source (court, state gazette or notary association)",
+    });
   }
 
   // Presence and recency of a date.
@@ -402,7 +436,7 @@ function scoreLead(candidate: RawLead, match: GeoMatch): { score: number; reason
     const years = ageInYears(candidate.date);
     if (isRecentDate(candidate.date)) {
       score += 12;
-      reasons.push("fecha reciente");
+      reasons.push({ es: "fecha reciente", en: "recent date" });
     } else if (years !== null && years >= 3) {
       // Age is a first-class negative signal, not a missing bonus. Verified case: a real, exactly
       // extracted succession edict from the Juzgado Mixto de Huayacocotla — published in the 2013
@@ -410,12 +444,13 @@ function scoreLead(candidate: RawLead, match: GeoMatch): { score: number; reason
       // over a decade ago. Ranking it first would misrepresent what the notary is looking at.
       score -= 35;
       const year = parseFlexibleDate(candidate.date)?.getFullYear();
-      reasons.push(
-        `aviso de ${year ?? "hace años"}: antecedente histórico, no una oportunidad nueva`,
-      );
+      reasons.push({
+        es: `aviso de ${year ?? "hace años"}: antecedente histórico, no una oportunidad nueva`,
+        en: `notice from ${year ?? "years ago"}: historical record, not a live opportunity`,
+      });
     } else {
       score += 4;
-      reasons.push("incluye fecha");
+      reasons.push({ es: "incluye fecha", en: "includes a date" });
     }
   }
 
@@ -424,13 +459,23 @@ function scoreLead(candidate: RawLead, match: GeoMatch): { score: number; reason
   // pretending otherwise is what made the old scores untrustworthy.
   if (looksSpecific(candidate)) {
     score += 10;
-    reasons.push("señala una persona o propiedad concreta");
+    reasons.push({
+      es: "señala una persona o propiedad concreta",
+      en: "points at a specific person or property",
+    });
   } else if (candidate.type === "property") {
-    reasons.push("página de resultados del portal: varios anuncios por revisar, no uno solo");
+    reasons.push({
+      es: "página de resultados del portal: varios anuncios por revisar, no uno solo",
+      en: "portal results page: several listings to review, not a single one",
+    });
   }
 
   score = Math.max(0, Math.min(100, score));
-  return { score, reason: `${reasons.join("; ")}.` };
+  return {
+    score,
+    reason: `${reasons.map((r) => r.es).join("; ")}.`,
+    reasonEn: `${reasons.map((r) => r.en).join("; ")}.`,
+  };
 }
 
 function dedupeLeads(leads: Lead[]): Lead[] {
@@ -475,8 +520,8 @@ export function triageLeads(candidates: RawLead[]): Lead[] {
   );
 
   const scored = survivors.map(({ candidate, match }) => {
-    const { score, reason } = scoreLead(candidate, match);
-    return { ...candidate, score, reason };
+    const { score, reason, reasonEn } = scoreLead(candidate, match);
+    return { ...candidate, score, category: classifyLead(candidate), reason, reasonEn };
   });
 
   return dedupeLeads(scored).sort((a, b) => b.score - a.score);
@@ -502,7 +547,9 @@ export function composeDigest(leads: Lead[]): string {
       "Demarcación Notarial:",
     "",
     ...leads.map((l) => {
-      const label = l.type === "property" ? "🏠 Propiedad" : "⚖️ Aviso legal";
+      // The digest is the artifact the notary actually reads, so it names the specific matter
+      // ("Juicio sucesorio") rather than the coarse type ("Aviso legal").
+      const label = `${CATEGORY_EMOJI[l.category]} ${CATEGORY_LABELS[l.category].es}`;
       const where = l.municipio ? ` (${l.municipio})` : "";
       return `${label}${where}: ${l.title}\n${l.sourceUrl}`;
     }),

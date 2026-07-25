@@ -3,6 +3,7 @@
 // a fixed input with a known-correct verdict, which is the point of making these stages rule-based.
 import { matchJurisdiction } from "../lib/jurisdiction";
 import { triageLeads, type RawLead } from "../agent/leads";
+import { classifyLead } from "../lib/categories";
 
 const cases: Array<{ label: string; expect: boolean; parts: string[] }> = [
   // Must REJECT: the live-run false positive (shared toponym, wrong state).
@@ -104,7 +105,37 @@ const checks: Array<{ label: string; ok: boolean; detail: string }> = [
     })(),
     detail: `single=${byTitle(singleListing.title)?.score} index=${byTitle(portalIndex.title)?.score}`,
   },
+  {
+    label: "every lead carries a category and both reason languages",
+    ok: triaged.every((l) => !!l.category && !!l.reason && !!l.reasonEn),
+    detail: triaged.map((l) => `${l.category}/${l.reasonEn ? "en✓" : "en✗"}`).join(", "),
+  },
 ];
+
+// --- Category classifier ------------------------------------------------------------------------
+// The category drives which conversion playbook the notary gets, so a misfiled matter hands them
+// the wrong checklist. These pin the cases that decide it.
+const classifierCases: Array<{ label: string; input: Parameters<typeof classifyLead>[0]; expect: string }> = [
+  {
+    label: "succession beats the generic edict fallback",
+    input: { type: "legal-notice", title: "Edicto", detail: "juicio sucesorio intestamentario" },
+    expect: "succession",
+  },
+  {
+    label: "sucesión with accent still classifies (diacritic-insensitive)",
+    input: { type: "legal-notice", title: "Sucesión testamentaria", detail: "" },
+    expect: "succession",
+  },
+  { label: "remate → auction", input: { type: "legal-notice", title: "Remate judicial en primera almoneda", detail: "" }, expect: "auction" },
+  { label: "declaración de ausencia → absence", input: { type: "legal-notice", title: "Declaración de ausencia", detail: "" }, expect: "absence" },
+  { label: "unclassifiable notice falls back to edict", input: { type: "legal-notice", title: "Edicto de emplazamiento", detail: "" }, expect: "edict" },
+  { label: "any property is a property-sale", input: { type: "property", title: "Terreno en venta", detail: "" }, expect: "property-sale" },
+];
+
+for (const c of classifierCases) {
+  const got = classifyLead(c.input);
+  checks.push({ label: `classify: ${c.label}`, ok: got === c.expect, detail: `expect=${c.expect} got=${got}` });
+}
 
 for (const c of checks) {
   if (!c.ok) failed++;
