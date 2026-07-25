@@ -320,7 +320,7 @@ memory entry.
 2. **User action:** in the Twilio Console → Messaging → Try it out → Send a WhatsApp message,
    activate the Sandbox. This gives a sandbox sender number (commonly `+14155238886`) and a
    join code (e.g. `join some-word`).
-3. **User/Martín action:** from Martín's WhatsApp (`REDACTED`), send `join <code>` to the
+3. **User/Martín action:** from the destination WhatsApp number, send `join <code>` to the
    sandbox number, once. This opts that number in for a rolling ~72h window (resets on any
    exchanged message) — **this is the exact step that was likely missed last time.**
 4. **User action:** hand over `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and the sandbox
@@ -329,7 +329,8 @@ memory entry.
 5. **This agent's part:** wire the digest agent's final step to a real `POST
    https://api.twilio.com/2010-04-01/Accounts/{SID}/Messages.json` call (Basic Auth
    `SID:Token`, form-encoded `From`/`To`/`Body`) sending the drafted lead digest to
-   `whatsapp:+REDACTED`. Genuine API call, genuine delivery — "mock" only in the sense
+   the destination number (kept out of this repo). Genuine API call, genuine delivery — "mock"
+   only in the sense
    that the sender is a shared Twilio sandbox number, not a production WhatsApp Business
    number, which is the correct trade for a hackathon timeline.
 
