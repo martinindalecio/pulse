@@ -28,7 +28,7 @@ to the single case, which on a real absence declaration returned the docket numb
 the statutory appearance window. The UI toggles EN|ES; the digest stays Spanish, because the
 notary's clients are.
 
-Live: https://pulse-app-navy-ten.vercel.app
+Live: https://pulse.martingalaz.com
 
 ## Demo video outline (1–3 min)
 
@@ -74,7 +74,7 @@ copy button covers the demo) and the repo/live URL on screen.
 ### Recording notes
 - The passcode is `PULSE_ACCESS_CODE` in `.env.local` — do not read it aloud on camera; type it or
   cut away.
-- Run against the live URL (https://pulse-app-navy-ten.vercel.app), not localhost, so the recording
+- Run against the live URL (https://pulse.martingalaz.com), not localhost, so the recording
   doubles as proof the deployment works.
 - A run takes ~25–30s — plan the narration to fill that window rather than sitting in silence.
 - **Seed the pipeline on the recording browser before rolling.** The board and the language setting

@@ -2,7 +2,7 @@
 
 Built for the **You.com Agentic AI Hackathon (SF Edition)**, Agent Systems track.
 
-**Live:** https://pulse-app-navy-ten.vercel.app — all three surfaces are behind a passcode gate
+**Live:** https://pulse.martingalaz.com — all three surfaces are behind a passcode gate
 (see [Getting started](#getting-started)) so anonymous traffic can't burn API credits.
 
 Pulse is a small platform with three surfaces, all running entirely on You.com — there is no

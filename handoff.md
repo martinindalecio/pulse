@@ -115,7 +115,7 @@ exists."
       Finance are the other two options in the brief but aren't required beyond one)
 - [x] Hosted on a public GitHub repository — https://github.com/martinindalecio/pulse
 - [x] `README.md` with clear setup instructions
-- [x] Deployed — https://pulse-app-navy-ten.vercel.app, with `YDC_API_KEY` and
+- [x] Deployed — https://pulse.martingalaz.com, with `YDC_API_KEY` and
       `PULSE_ACCESS_CODE` set on the host
 - [x] Live in-person demo ready (this is the primary format per the brief) — script and
       pre-flight steps in [demo-script.md](demo-script.md)

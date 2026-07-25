@@ -3,7 +3,7 @@
 A word-for-word script for the 1–3 minute submission video, with the click cues interleaved.
 Target length **2:40**. Read the "SAY" lines out loud; they're written to be spoken, not read.
 
-Everything below assumes the **live URL**, https://pulse-app-navy-ten.vercel.app, so the recording
+Everything below assumes the **live URL**, https://pulse.martingalaz.com, so the recording
 doubles as proof the deployment works.
 
 ---
@@ -13,7 +13,7 @@ doubles as proof the deployment works.
 The pipeline board lives in the recording browser's `localStorage`. If you skip this, the
 dashboard beat opens empty and the best part of the demo has nothing in it.
 
-1. Open https://pulse-app-navy-ten.vercel.app/lead-radar and enter the passcode.
+1. Open https://pulse.martingalaz.com/lead-radar and enter the passcode.
 2. Confirm the toggle in the top right reads **EN** (black pill on EN, not ES).
 3. Click **Run today's scan**. Wait for results (~25–30s).
 4. Click **Run today's scan** a second time. This gives you a scan history and makes the
