@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import type { PulseMessage, PulseSource } from "@/agent/pulse-agent";
 import { AccessGate, useAccessCode } from "@/components/access-gate";
+import { LanguageToggle } from "@/lib/i18n";
 
 const SUGGESTIONS = [
   "Nvidia stock outlook",
@@ -126,9 +127,15 @@ export default function Home() {
               Real-time, citation-backed briefings powered by You.com Research.
             </p>
           </div>
-          <Link href="/lead-radar" className="text-sm text-zinc-500 underline dark:text-zinc-400">
-            Lead Radar →
-          </Link>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <LanguageToggle />
+            <Link href="/lead-radar" className="text-sm text-zinc-500 underline dark:text-zinc-400">
+              Lead Radar →
+            </Link>
+            <Link href="/dashboard" className="text-sm text-zinc-500 underline dark:text-zinc-400">
+              Pipeline →
+            </Link>
+          </div>
         </header>
 
         <div className="flex-1 space-y-6 overflow-y-auto">

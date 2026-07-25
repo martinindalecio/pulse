@@ -4,32 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Lead } from "@/agent/leads";
 import { AccessGate, useAccessCode } from "@/components/access-gate";
+import { CATEGORY_LABELS } from "@/lib/categories";
+import { LanguageToggle, useLang } from "@/lib/i18n";
+import { loadHistory, recordRun, type RunRecord } from "@/lib/pipeline-store";
 
-const HISTORY_KEY = "lead-radar-history";
-const MAX_HISTORY = 10;
-
-type RunRecord = {
-  timestamp: number;
-  leads: Lead[];
-  digest: string;
-  mode: "agent" | "fallback" | "";
-};
-
-function loadHistory(): RunRecord[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(history: RunRecord[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
-}
-
-function formatTimestamp(ts: number): string {
-  return new Date(ts).toLocaleString("es-MX", {
+function formatTimestamp(ts: number, lang: string): string {
+  return new Date(ts).toLocaleString(lang === "es" ? "es-MX" : "en-US", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -39,6 +19,7 @@ function formatTimestamp(ts: number): string {
 
 export default function LeadRadar() {
   const { accessCode, unauthorized, setCode, reject } = useAccessCode();
+  const { lang, t } = useLang();
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [digest, setDigest] = useState("");
@@ -82,10 +63,13 @@ export default function LeadRadar() {
         setNewSinceLast(null);
       }
 
-      const record: RunRecord = { timestamp: Date.now(), leads: runLeads, digest: runDigest, mode: runMode };
-      const nextHistory = [record, ...history].slice(0, MAX_HISTORY);
-      setHistory(nextHistory);
-      saveHistory(nextHistory);
+      const record: RunRecord = {
+        timestamp: Date.now(),
+        leads: runLeads,
+        digest: runDigest,
+        mode: runMode,
+      };
+      setHistory(recordRun(record, history));
 
       setLeads(runLeads);
       setDigest(runDigest);
@@ -97,33 +81,36 @@ export default function LeadRadar() {
     }
   };
 
+  const viewing = viewingIndex !== null ? history[viewingIndex] : null;
+  const shownLeads = viewing ? viewing.leads : leads;
+  const shownDigest = viewing ? viewing.digest : digest;
+  const shownMode = viewing ? viewing.mode : mode;
+
   const copyDigest = () => {
     navigator.clipboard.writeText(shownDigest);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const viewing = viewingIndex !== null ? history[viewingIndex] : null;
-  const shownLeads = viewing ? viewing.leads : leads;
-  const shownDigest = viewing ? viewing.digest : digest;
-  const shownMode = viewing ? viewing.mode : mode;
-
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex w-full max-w-3xl flex-1 flex-col px-6 py-10">
-        <header className="mb-8 flex items-start justify-between">
+        <header className="mb-8 flex items-start justify-between gap-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
               Lead Radar
             </h1>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Propiedades en venta y avisos legales (edictos, juicios sucesorios, remates) en los
-              cuatro municipios de la Cuarta Demarcación Notarial de Huayacocotla, Veracruz.
-            </p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{t("radar.subtitle")}</p>
           </div>
-          <Link href="/" className="text-sm text-zinc-500 underline dark:text-zinc-400">
-            ← Pulse
-          </Link>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <LanguageToggle />
+            <Link href="/dashboard" className="text-sm text-zinc-500 underline dark:text-zinc-400">
+              {t("nav.dashboard")}
+            </Link>
+            <Link href="/" className="text-sm text-zinc-500 underline dark:text-zinc-400">
+              {t("nav.pulse")}
+            </Link>
+          </div>
         </header>
 
         <div className="mb-8 flex items-center gap-4">
@@ -132,14 +119,14 @@ export default function LeadRadar() {
             disabled={status === "loading"}
             className="self-start rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-50 transition-colors disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-950"
           >
-            {status === "loading" ? "Buscando señales…" : "Buscar señales de hoy"}
+            {status === "loading" ? t("radar.running") : t("radar.run")}
           </button>
           {history.length > 0 && (
             <button
               onClick={() => setShowHistory((v) => !v)}
               className="text-sm text-zinc-500 underline dark:text-zinc-400"
             >
-              {showHistory ? "Ocultar historial" : `Ver historial (${history.length})`}
+              {showHistory ? t("radar.hideHistory") : `${t("radar.showHistory")} (${history.length})`}
             </button>
           )}
         </div>
@@ -147,7 +134,7 @@ export default function LeadRadar() {
         {showHistory && (
           <section className="mb-8 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-              Ejecuciones anteriores
+              {t("radar.previousRuns")}
             </h2>
             <ul className="flex flex-col gap-1">
               {history.map((record, i) => (
@@ -158,10 +145,13 @@ export default function LeadRadar() {
                       setShowHistory(false);
                     }}
                     className={`w-full rounded-lg px-2 py-1 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
-                      viewingIndex === i ? "font-medium text-zinc-950 dark:text-zinc-50" : "text-zinc-600 dark:text-zinc-400"
+                      viewingIndex === i
+                        ? "font-medium text-zinc-950 dark:text-zinc-50"
+                        : "text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
-                    {formatTimestamp(record.timestamp)} — {record.leads.length} señales
+                    {formatTimestamp(record.timestamp, lang)} — {record.leads.length}{" "}
+                    {t("radar.signalsShort")}
                   </button>
                 </li>
               ))}
@@ -171,30 +161,32 @@ export default function LeadRadar() {
 
         {viewing && (
           <div className="mb-6 flex items-center justify-between rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-            <span>Viendo ejecución del {formatTimestamp(viewing.timestamp)}</span>
+            <span>
+              {t("radar.viewingRun")} {formatTimestamp(viewing.timestamp, lang)}
+            </span>
             <button onClick={() => setViewingIndex(null)} className="underline">
-              Volver a resultados actuales
+              {t("radar.backToCurrent")}
             </button>
           </div>
         )}
 
-        {status === "error" && (
-          <p className="mb-6 text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
+        {status === "error" && <p className="mb-6 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         {(status === "done" || viewing) && (
           <div className="flex flex-col gap-8">
             {!viewing && newSinceLast !== null && (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 {newSinceLast > 0
-                  ? `🔺 ${newSinceLast} señal${newSinceLast === 1 ? "" : "es"} nueva${newSinceLast === 1 ? "" : "s"} desde la ejecución anterior.`
-                  : "Sin cambios desde la ejecución anterior."}
+                  ? lang === "es"
+                    ? `🔺 ${newSinceLast} señal${newSinceLast === 1 ? "" : "es"} nueva${newSinceLast === 1 ? "" : "s"} desde la ejecución anterior.`
+                    : `🔺 ${newSinceLast} new signal${newSinceLast === 1 ? "" : "s"} since the previous scan.`
+                  : t("radar.noChange")}
               </p>
             )}
 
             <section>
               <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                Mensaje para WhatsApp
+                {t("radar.digestTitle")}
               </h2>
               <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm whitespace-pre-wrap text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                 {shownDigest}
@@ -203,25 +195,30 @@ export default function LeadRadar() {
                 onClick={copyDigest}
                 className="mt-2 text-xs text-zinc-500 underline dark:text-zinc-400"
               >
-                {copied ? "¡Copiado!" : "Copiar mensaje"}
+                {copied ? t("radar.copied") : t("radar.copy")}
               </button>
             </section>
 
             <section>
-              <div className="mb-3 flex items-baseline justify-between">
+              <div className="mb-1 flex items-baseline justify-between">
                 <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                  Señales encontradas ({shownLeads.length})
+                  {t("radar.detected")} ({shownLeads.length})
                 </h2>
                 {shownMode && (
                   <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                    modo: {shownMode === "agent" ? "agente" : "respaldo"}
+                    {t("radar.mode")}:{" "}
+                    {shownMode === "agent" ? t("radar.modeAgent") : t("radar.modeFallback")}
                   </span>
                 )}
               </div>
+              <p className="mb-3 text-xs text-zinc-400 dark:text-zinc-500">
+                {t("radar.trackedNote")}{" "}
+                <Link href="/dashboard" className="underline">
+                  {t("nav.dashboard")}
+                </Link>
+              </p>
               {shownLeads.length === 0 ? (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  No se encontraron señales nuevas hoy.
-                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("radar.none")}</p>
               ) : (
                 <ul className="flex flex-col gap-3">
                   {shownLeads.map((lead, i) => (
@@ -237,7 +234,7 @@ export default function LeadRadar() {
                               : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
                           }`}
                         >
-                          {lead.type === "property" ? "Propiedad" : "Aviso legal"}
+                          {CATEGORY_LABELS[lead.category]?.[lang] ?? lead.type}
                         </span>
                         <span className="font-medium text-zinc-950 dark:text-zinc-50">
                           {lead.title}
@@ -247,7 +244,9 @@ export default function LeadRadar() {
                         </span>
                       </div>
                       <p className="text-zinc-700 dark:text-zinc-300">{lead.detail}</p>
-                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{lead.reason}</p>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        {lang === "es" ? lead.reason : (lead.reasonEn ?? lead.reason)}
+                      </p>
                       {(lead.municipio || lead.date) && (
                         <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                           {[lead.municipio, lead.date].filter(Boolean).join(" · ")}
@@ -259,7 +258,7 @@ export default function LeadRadar() {
                         rel="noopener noreferrer"
                         className="mt-1 inline-block text-xs text-zinc-500 underline dark:text-zinc-400"
                       >
-                        Fuente: {lead.sourceName}
+                        {t("radar.source")}: {lead.sourceName}
                       </a>
                     </li>
                   ))}
