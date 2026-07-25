@@ -371,7 +371,8 @@ function ExecutionPanel({
           </button>
           {result && (
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              {t("exec.ranAt")}: {new Date(result.generatedAt).toLocaleTimeString()}
+              {t("exec.ranAt")}:{" "}
+              {new Date(result.generatedAt).toLocaleTimeString(lang === "es" ? "es-MX" : "en-US")}
             </span>
           )}
         </div>

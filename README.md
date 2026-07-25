@@ -2,10 +2,10 @@
 
 Built for the **You.com Agentic AI Hackathon (SF Edition)**, Agent Systems track.
 
-**Live:** https://pulse-app-navy-ten.vercel.app — both surfaces are behind a passcode gate
+**Live:** https://pulse-app-navy-ten.vercel.app — all three surfaces are behind a passcode gate
 (see [Getting started](#getting-started)) so anonymous traffic can't burn API credits.
 
-Pulse is a small platform with two surfaces, both running entirely on You.com — there is no
+Pulse is a small platform with three surfaces, all running entirely on You.com — there is no
 chat model anywhere in this app:
 
 1. **Pulse chat** (`/`) — ask a topic, company, or ticker; a single You.com **Research** call
@@ -13,6 +13,12 @@ chat model anywhere in this app:
    links.
 2. **Lead Radar** (`/lead-radar`) — a lead-scout for a real Mexican notary public (*notario*),
    built for a real jurisdiction, drafting a real WhatsApp digest from real public sources.
+3. **Pipeline** (`/dashboard`) — every signal ever detected, on a board with a manual status
+   pipeline, and an **agentic execution** mode that turns one signal into a worked matter.
+
+The whole interface has an **EN | ES toggle** (defaults to English). It swaps UI strings only —
+the WhatsApp digest stays Spanish in both modes, because the notary's clients are Spanish
+speakers and that digest is the artifact they actually receive.
 
 ## Lead Radar — the use case
 
@@ -96,8 +102,39 @@ Triage after discovery is **fully deterministic and explainable** — no LLM sco
   Without this, Research sometimes hands back the gazette or court *index page that lists*
   notices, badged as if it were a notice itself — a real bug this rule specifically closes.
 - A transparent 0–100 score, composed from named rules (signal type, jurisdiction-match
-  strength, source authority, date recency/staleness, specificity), with a Spanish `reason`
-  string that states exactly which rules fired for that score.
+  strength, source authority, date recency/staleness, specificity), with a `reason` string —
+  emitted in both Spanish and English — that states exactly which rules fired for that score.
+- A **matter category** assigned by keyword classifier (`lib/categories.ts`), specific before
+  generic: *Probate / Succession*, *Judicial auction*, *Declaration of absence*, *Court edict*
+  (the fallback for an unclassifiable notice), and *Real-estate sale*. Matching is
+  diacritic-insensitive, so *sucesión* and *sucesion* classify identically.
+
+## Pipeline + agentic execution
+
+Everything Lead Radar surfaces is filed automatically into a pipeline board at `/dashboard`,
+keyed on source URL — the same key discovery already dedupes on. Each entry carries `firstSeen`,
+`lastSeen`, how many scans it has appeared in, and a status the notary advances by hand:
+**Detected → Outreach made → Engaged (file opened)**, or **Dismissed**. A repeat scan refreshes
+the signal's score and text but never resets a status or discards execution work — a scan must
+not undo the notary's own bookkeeping.
+
+**Agentic execution** is the second agent (`agent/conversion-agent.ts`). Starting it on a signal
+produces two things side by side:
+
+- A **notarial procedure checklist** — a fixed, per-category playbook (`lib/playbooks.ts`),
+  written once and identical on every run. No model decides these steps; the checkboxes persist.
+- **Case research** — a You.com **Research** call scoped to that one signal, with a strict
+  `output_schema` returning `summary`, `parties`, `next_steps`, `risks`, and its sources. The
+  prompt pins the source document and the district and instructs the agent not to assert
+  anything the source doesn't support.
+
+If the Research call fails, the panel still renders the checklist and says plainly that research
+was unavailable — the execution mode degrades, it never dead-ends. Status never advances on its
+own; the notary clicks it.
+
+A live run on a real *declaración especial de ausencia* returned the expediente number
+(183/2025-III), the issuing court, the signing court secretary, and the three-month appearance
+window — all traceable to the source edict.
 
 ## You.com APIs used
 
@@ -105,7 +142,8 @@ Triage after discovery is **fully deterministic and explainable** — no LLM sco
   orchestrator's targeted follow-up queries for uncovered municipios.
 - **Research** — two of the four legal-notice discovery calls, both with a strict
   `output_schema` for structured, cited extraction, plus one of the two using `boostDomains`
-  toward official sources. Pulse chat also uses Research directly for its briefings (below).
+  toward official sources. The conversion agent makes a third kind of Research call, scoped to a
+  single signal. Pulse chat also uses Research directly for its briefings (below).
 - **Contents** — the deterministic edictos scrape, and (verified separately) natively parsing
   PDFs for the Gaceta Oficial de Veracruz, whose actual gazette issues are PDF files.
 
@@ -135,9 +173,9 @@ as the source of truth for how to call the API correctly.
   against the source document. Its 2013 date is exactly why the scorer penalizes stale notices
   and labels them "antecedente histórico, no una oportunidad nueva" — a real find, correctly
   flagged as not a live opportunity.
-- `npm run gate-check` runs 13 offline acceptance checks (geo-gate accept/reject
-  cases, plus the deterministic triage rules) with no API key and no model call — the way to
-  verify the deterministic stages independent of live API behavior.
+- `npm run gate-check` runs 20 offline acceptance checks (geo-gate accept/reject cases, the
+  deterministic triage rules, and the matter classifier) with no API key and no model call — the
+  way to verify the deterministic stages independent of live API behavior.
 - A recent live run returned 12–13 leads in `mode: "agent"`, in roughly 25–30 seconds.
 
 No invented metrics, benchmark numbers, or user counts appear anywhere in this project —
@@ -166,17 +204,23 @@ YDC_API_KEY=your-you-com-api-key
 PULSE_ACCESS_CODE=any-passcode-you-choose
 ```
 
-`PULSE_ACCESS_CODE` gates both `/api/chat` and `/api/lead-radar` behind a passcode (checked
-server-side, entered once client-side) so a public deployment can't be hit by strangers/bots
-burning your API credits. **If deploying, set this env var on the host too** — if it's unset
-there, the gate is skipped and the endpoint is open.
+`PULSE_ACCESS_CODE` gates `/api/chat`, `/api/lead-radar`, and `/api/execute` behind a passcode
+(checked server-side, entered once client-side) so a public deployment can't be hit by
+strangers/bots burning your API credits. **If deploying, set this env var on the host too** — if
+it's unset there, the gate is skipped and the endpoints are open.
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for Pulse chat, or
-[http://localhost:3000/lead-radar](http://localhost:3000/lead-radar) for Lead Radar.
+Open [http://localhost:3000](http://localhost:3000) for Pulse chat,
+[http://localhost:3000/lead-radar](http://localhost:3000/lead-radar) for Lead Radar, or
+[http://localhost:3000/dashboard](http://localhost:3000/dashboard) for the pipeline board.
+
+The pipeline board and the language preference live in the browser's `localStorage`, so they
+belong to one browser profile. That is a deliberate trade: the pipeline is one notary's working
+list, and it only has to survive a page reload. Nothing above `lib/pipeline-store.ts` knows how
+it is stored, so moving it server-side later means swapping four functions for fetches.
 
 To verify the deterministic parts of Lead Radar without any API key:
 
@@ -188,15 +232,25 @@ npm run gate-check
 
 - `lib/you.ts` — direct-fetch wrappers for You.com Search, Contents, and Research
 - `lib/jurisdiction.ts` — the notary's jurisdiction reference data and the deterministic geo-gate
+- `lib/categories.ts` — the keyword matter classifier and its bilingual labels
+- `lib/playbooks.ts` — the fixed per-category conversion checklists, plus the execution result types
+- `lib/pipeline-store.ts` — the pipeline's localStorage data layer (upsert, backfill, status,
+  saved executions)
+- `lib/i18n.tsx` — the EN/ES string table, the language provider, and the `EN | ES` toggle
 - `agent/pulse-agent.ts` — builds the Research prompt and normalizes the response for Pulse chat
 - `agent/lead-radar-agent.ts` — the Lead Radar plan/observe/adapt/stop orchestrator
 - `agent/leads.ts` — the four discovery specialists, deterministic triage/scoring, and digest
   composition
+- `agent/conversion-agent.ts` — the execution agent: playbook selection plus the single-signal
+  You.com Research call
 - `app/api/chat/route.ts` — Pulse chat route handler (plain JSON, not streaming)
 - `app/api/lead-radar/route.ts` — Lead Radar route handler
+- `app/api/execute/route.ts` — conversion route handler, behind the same access code
 - `app/page.tsx` — Pulse chat UI
 - `app/lead-radar/page.tsx` — Lead Radar UI
-- `scripts/gate-check.mts` — offline acceptance checks for the geo-gate and triage rules
+- `app/dashboard/page.tsx` — the pipeline board and the execution drawer
+- `components/access-gate.tsx` — the passcode gate and the `useAccessCode` hook all three pages share
+- `scripts/gate-check.mts` — offline acceptance checks for the geo-gate, triage rules, and classifier
 
 ---
 
@@ -205,11 +259,11 @@ npm run gate-check
 - [x] Working end-to-end app (real query → You.com data → cited response)
 - [x] Public GitHub repo
 - [x] README
-- [x] Access-code gate on `/api/chat` and `/api/lead-radar` (prevents anonymous token/credit
-      burn if deployed publicly)
+- [x] Access-code gate on `/api/chat`, `/api/lead-radar`, and `/api/execute` (prevents anonymous
+      token/credit burn if deployed publicly)
 - [x] No chat-model dependency to break under rate limits — You.com is the only intelligence
       layer
 - [x] Deployed to production, with `YDC_API_KEY` and `PULSE_ACCESS_CODE` set on the host
 - [x] Live run verified on the deployed URL: `mode: "agent"`, 13 leads, 24s
 - [ ] Demo video (1–3 min)
-- [ ] ~200-word project description
+- [x] Project description drafted (`submission.md`)
