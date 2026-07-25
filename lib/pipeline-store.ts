@@ -7,6 +7,7 @@
 // below for fetches — nothing above this file knows how it is stored.
 
 import type { Lead } from "@/agent/leads";
+import { classifyLead } from "./categories";
 import type { ConversionResult } from "./playbooks";
 
 export const PIPELINE_KEY = "lead-radar-pipeline";
@@ -48,7 +49,14 @@ type Pipeline = Record<string, PipelineEntry>;
 function read(): Pipeline {
   if (typeof window === "undefined") return {};
   try {
-    return JSON.parse(localStorage.getItem(PIPELINE_KEY) ?? "{}") as Pipeline;
+    const stored = JSON.parse(localStorage.getItem(PIPELINE_KEY) ?? "{}") as Pipeline;
+    // Signals filed before the classifier shipped have no category, which would leave them
+    // unfilterable and rejected by /api/execute. Classification reads only the lead's own text,
+    // so recomputing it here recovers that older data instead of stranding it.
+    for (const entry of Object.values(stored)) {
+      if (!entry.lead.category) entry.lead.category = classifyLead(entry.lead);
+    }
+    return stored;
   } catch {
     return {};
   }
