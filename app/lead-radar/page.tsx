@@ -18,7 +18,7 @@ function formatTimestamp(ts: number, lang: string): string {
 }
 
 export default function LeadRadar() {
-  const { accessCode, unauthorized, setCode, reject } = useAccessCode();
+  const { accessCode, ready, unauthorized, setCode, reject } = useAccessCode();
   const { lang, t } = useLang();
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -31,6 +31,7 @@ export default function LeadRadar() {
   const [showHistory, setShowHistory] = useState(false);
   const [viewingIndex, setViewingIndex] = useState<number | null>(null);
 
+  if (!ready) return null;
   if (!accessCode) {
     return <AccessGate unauthorized={unauthorized} onSubmit={setCode} />;
   }

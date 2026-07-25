@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LanguageToggle, useLang } from "@/lib/i18n";
 
 const ACCESS_CODE_KEY = "pulse-access-code";
 
 export function useAccessCode() {
-  const [accessCode, setAccessCode] = useState(() =>
-    typeof window === "undefined" ? "" : sessionStorage.getItem(ACCESS_CODE_KEY) ?? "",
-  );
+  // `null` means "haven't looked at sessionStorage yet". Reading it during render would make the
+  // server (which always sees no code) disagree with an already-unlocked client, and React treats
+  // that as a hydration failure — a red error overlay on every page load.
+  const [accessCode, setAccessCode] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
+
+  useEffect(() => {
+    setAccessCode(sessionStorage.getItem(ACCESS_CODE_KEY) ?? "");
+  }, []);
 
   const setCode = (code: string) => {
     sessionStorage.setItem(ACCESS_CODE_KEY, code);
@@ -24,7 +29,14 @@ export function useAccessCode() {
     setUnauthorized(true);
   };
 
-  return { accessCode, unauthorized, setCode, reject };
+  return {
+    accessCode: accessCode ?? "",
+    /** False until sessionStorage has been read — render nothing rather than flash the gate. */
+    ready: accessCode !== null,
+    unauthorized,
+    setCode,
+    reject,
+  };
 }
 
 export function AccessGate({

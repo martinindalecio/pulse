@@ -41,11 +41,12 @@ function stripInlineMarkdownLinks(text: string): string {
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const { accessCode, unauthorized, setCode, reject } = useAccessCode();
+  const { accessCode, ready, unauthorized, setCode, reject } = useAccessCode();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const idPrefix = useId();
 
+  if (!ready) return null;
   if (!accessCode) {
     return <AccessGate unauthorized={unauthorized} onSubmit={setCode} />;
   }
